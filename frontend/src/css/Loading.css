@@ -1,0 +1,39 @@
+.l-container {
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.l-logo {
+  width: 30%;
+  height: auto;
+  @media (max-width: 768px) {
+    width: 50%;
+  }
+}
+
+.l-letter-s {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 0;
+  animation: 5s drawS linear infinite alternate;
+}
+
+.l-star {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 0;
+  animation: 5s drawStar linear infinite alternate;
+}
+
+@keyframes drawS {
+  to {
+    stroke-dashoffset: 1491.39916992;
+  }
+}
+
+@keyframes drawStar {
+  to {
+    stroke-dashoffset: 2171.92871094;
+  }
+}

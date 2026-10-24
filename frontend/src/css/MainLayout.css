@@ -1,0 +1,52 @@
+.ml-navbar {
+  width: 16vw;
+  min-width: 150px;
+  min-width: fit-content;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  @media (max-width: 768px) {
+  }
+}
+
+.ml-logo {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 150px;
+  height: auto;
+}
+
+.ml-navitem {
+  width: 12vw;
+  min-width: 115px;
+  height: 1.5rem;
+  min-height: 15px;
+  place-content: center;
+  padding: 5px;
+  padding-left: 8px;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--text);
+  border-radius: 15px;
+  transition: width 0.5s ease;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ml-navitem:hover {
+  width: 14vw;
+}
+.ml-main {
+  --width-navbar: max(150px, 16vw);
+  position: absolute;
+  top: 0;
+  left: var(--width-navbar);
+  margin-left: 10px;
+  margin-right: 4rem;
+  padding-bottom: 2rem;
+  width: calc(100vw - var(--width-navbar) - 10px - 100px);
+}
