@@ -61,3 +61,30 @@ h2 {
 p {
   margin: 0;
 }
+
+label {
+  margin-right: 0.25rem;
+}
+
+input {
+  background-color: transparent;
+  border: 1px solid var(--text);
+  border-radius: 3px;
+  width: 200px;
+  color: var(--text);
+}
+
+button {
+  background-color: transparent;
+  border: 1px solid var(--text);
+  border-radius: 3px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:active{
+  border: 1px solid gray;
+  color: gray;
+}
