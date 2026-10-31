@@ -33,7 +33,7 @@ router.post("/login", async (req, res) => {
         SELECT id, username, password_hash, member_id
         FROM users
         WHERE username = ?
-    `).get(username.trim()) as User;
+    `).get(username.trim()) as User | undefined;
 
     if (!user || !(await argon2.verify(user.password_hash, password))) {
         res.status(401).json({ error: "Neplatné jméno nebo heslo." });

@@ -1,21 +1,11 @@
-export const permissions = [
-    "meetings.read",
-    "meetings.write",
+export const Modules = {
+    Meetings: { value: "meetings", label: "Schůzky" },
+    Events: { value: "events", label: "Výpravy" },
+    Web: { value: "web", label: "Web" },
+    Finance: { value: "finance", label: "Finance" },
+    Grants: { value: "grants", label: "Granty" },
+    Database: { value: "database", label: "Databáze" },
+} as const;
 
-    "events.read",
-    "events.write",
-    
-    "web.read",
-    "web.write",
-    
-    "finance.read",
-    "finance.write",
-    
-    "grants.read",
-    "grants.write",
-    
-    "database.read",
-    "database.write",
-] as const;
-
-export type Permission = (typeof permissions)[number];
+export type Module =
+    (typeof Modules)[keyof typeof Modules]["value"];

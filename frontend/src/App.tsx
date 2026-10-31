@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router";
-import { navigation } from "./config/navigation";
+import { navigation } from "./config/navigation.ts";
+import { routes } from "./config/routes.ts";
 
 import MainLayout from "./layouts/MainLayout.tsx";
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -17,6 +18,9 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
           {navigation.map(({ path, name, component: Page }) => (
+            <Route key={name} path={path} element={<Page />} />
+          ))}
+          {routes.map(({ path, name, component: Page }) => (
             <Route key={name} path={path} element={<Page />} />
           ))}
         </Route>

@@ -2,6 +2,9 @@
   margin: 0;
   padding: 0;
 }
+*::-webkit-scrollbar {
+  display: none;
+}
 
 @font-face {
   font-family: "Raleway";
@@ -95,4 +98,28 @@ button {
 button:active {
   border: 1px solid gray;
   color: gray;
+}
+
+a {
+  color: var(--text);
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table th,
+table td {
+  border: 1px solid var(--text);
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  height: 1.5rem;
+  white-space: nowrap;
+}
+
+table th {
+  font-weight: 600;
+  color: var(--text);
 }

@@ -1,0 +1,8 @@
+.p-table-container {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.p-table-container::-webkit-scrollbar {
+  display: none;
+}
