@@ -1,21 +1,38 @@
+:root {
+  --mobile-navbar-height: 3rem;
+  --bar-width: 18px;
+  --bar-height: 3px;
+  --hamburger-gap: 3px;
+  --animation-timing: 200ms ease-in-out;
+  --hamburger-height: calc(var(--bar-height) * 3 + var(--hamburger-gap) * 2);
+}
+
 .ml-navbar {
   width: 16vw;
   min-width: 150px;
-  min-width: fit-content;
   position: fixed;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  @media (max-width: 768px) {
-  }
 }
 
 .ml-logo {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  display: flex;
+  margin: 0 auto;
+}
+
+.ml-logo img {
   width: 150px;
   height: auto;
+  margin: 0 auto;
+}
+
+.ml-navitems {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
 }
 
 .ml-navitem {
@@ -23,13 +40,11 @@
   min-width: 115px;
   height: 1.5rem;
   min-height: 15px;
-  place-content: center;
-  padding: 5px;
-  padding-left: 8px;
-  margin-left: auto;
-  margin-right: auto;
+  align-content: center;
+  padding: 0.3rem;
+  padding-left: 0.5rem;
   border: 1px solid var(--text);
-  border-radius: 15px;
+  border-radius: 1000px;
   transition: width 0.5s ease;
   cursor: pointer;
   user-select: none;
@@ -40,13 +55,134 @@
 .ml-navitem:hover {
   width: 14vw;
 }
+
 .ml-main {
   --width-navbar: max(150px, 16vw);
-  position: absolute;
-  top: 0;
-  left: var(--width-navbar);
-  margin-left: 10px;
-  margin-right: 4rem;
+  box-sizing: border-box;
   padding-bottom: 2rem;
-  width: calc(100vw - var(--width-navbar) - 10px - 100px);
+  padding-left: calc(var(--width-navbar) + 0.5rem);
+  padding-right: 4rem;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ml-navbar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--mobile-navbar-height);
+    z-index: 2;
+    transition: top 0.5s ease;
+  }
+
+  .ml-navbar.scrolling {
+    top: calc(var(--mobile-navbar-height) * -1);
+  }
+
+  .ml-header {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    background: linear-gradient(to bottom, rgb(3, 0, 29), rgb(6, 3, 36));
+    z-index: 2;
+  }
+
+  .ml-logo {
+    margin-left: 0.5rem;
+    height: 100%;
+  }
+  .ml-logo img {
+    width: auto;
+    height: calc(var(--mobile-navbar-height) - 1rem);
+    margin: auto 0;
+  }
+
+  .ml-navitems {
+    position: fixed;
+    left: 0;
+    top: var(--mobile-navbar-height);
+    padding: 0.5rem 0;
+    transform: translateX(100%);
+    transition: transform var(--animation-timing);
+    background: linear-gradient(to bottom, rgb(6, 3, 36), rgb(3, 0, 29));
+    margin: 0;
+    height: auto;
+    max-height: calc(100dvh - var(--mobile-navbar-height));
+    width: 100%;
+    overflow-y: scroll;
+    z-index: 5;
+  }
+
+  .ml-navitem {
+    width: 80vw;
+    height: 3vh;
+  }
+
+  .ml-navitem:hover {
+    width: 90vw;
+  }
+
+  .ml-header:has(.ml-hamburger-menu input:checked) + .ml-navitems {
+    transform: translateX(0);
+  }
+
+  .ml-hamburger-menu {
+    --x-width: calc(var(--hamburger-height) * 1.4142);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    gap: var(--hamburger-gap);
+    width: max-content;
+    position: absolute;
+    right: 10px;
+    top: calc((var(--mobile-navbar-height) - var(--hamburger-height)) / 2);
+  }
+
+  .ml-hamburger-menu::before,
+  .ml-hamburger-menu::after,
+  .ml-hamburger-menu input {
+    content: "";
+    width: var(--bar-width);
+    height: var(--bar-height);
+    background-color: var(--text);
+    border-radius: 1000px;
+    transform-origin: right center;
+    transition:
+      opacity var(--animation-timing),
+      width var(--animation-timing),
+      rotate var(--animation-timing),
+      translate var(--animation-timing);
+  }
+
+  .ml-hamburger-menu input {
+    appearance: none;
+    margin: 0;
+    outline: none;
+  }
+
+  .ml-hamburger-menu:has(input:checked)::before {
+    rotate: -45deg;
+    width: var(--x-width);
+    translate: calc(var(--bar-width) / -10) calc(var(--bar-height) / -2);
+  }
+  .ml-hamburger-menu:has(input:checked)::after {
+    rotate: 45deg;
+    width: var(--x-width);
+    translate: calc(var(--bar-width) / -10) calc(var(--bar-height) / 2);
+  }
+
+  .ml-hamburger-menu input:checked {
+    opacity: 0;
+    width: 0;
+  }
+
+  .ml-main {
+    width: 100%;
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+    padding-top: calc(var(--mobile-navbar-height) + 1rem);
+    margin: 0;
+  }
 }
