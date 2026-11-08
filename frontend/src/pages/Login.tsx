@@ -1,35 +1,44 @@
-import "../css/Login.css";
 import { useState } from "react";
+import { useAuth } from "../auth/AuthContext.tsx";
+import "../css/Login.css";
+import { useLocation, useNavigate } from "react-router";
 
 export default function Login() {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [isWrong, setIsWrong] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [temporarilyDisabled, setTemporarilyDisabled] =
+    useState<boolean>(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (event: React.SubmitEvent) => {
     event.preventDefault();
+    if (temporarilyDisabled) return;
+    setIsWrong(false);
+    setError(null);
+    const result = await login(username, password);
 
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error);
-        return;
-      }
-
-      console.log("Logged in:", data.user);
-
-    } catch (error) {
-      console.error("Login request failed:", error);
-      alert("Nepodařilo se spojit se serverem.");
+    if (result.status == 401 && !result.success) {
+      setIsWrong(true);
+      return;
     }
+
+    if (result.status == 429 && !result.success) {
+      setIsWrong(true);
+      setTemporarilyDisabled(true);
+      return;
+    }
+
+    if (!result.success) {
+      setError(result.error!);
+      return;
+    }
+    navigate(from, { replace: true });
   };
 
   return (
@@ -39,21 +48,29 @@ export default function Login() {
         <label htmlFor="name">Jméno:</label>
         <input
           id="username"
+          className={isWrong ? "lo-shake" : ""}
           name="username"
           required={true}
           value={username}
           onChange={(event) => setUsername(event.target.value)}
+          disabled={temporarilyDisabled}
         />
         <label htmlFor="password">Heslo:</label>
         <input
           id="password"
+          className={isWrong ? "lo-shake" : ""}
           name="password"
           type="password"
           required={true}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          disabled={temporarilyDisabled}
         />
-        <button type="submit">Přihlásit</button>
+        {temporarilyDisabled ? (
+          <p>{"Překročen maximální počet pokusů. Zkuste to znovu později."}</p>
+        ) : (
+          <button type="submit">Přihlásit</button>
+        )}
       </form>
     </main>
   );

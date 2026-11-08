@@ -3,11 +3,15 @@ import { navigation } from "../config/navigation";
 import logoSirius from "../assets/images/logoSirius-white.svg";
 import "../css/MainLayout.css";
 import { useEffect, useState } from "react";
+import { useAuth } from "../auth/AuthContext";
+import { permissionLevel } from "../config/types";
 
 export default function MainLayout() {
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth <= 768);
   const [menuOpened, setMenuOpened] = useState<boolean>(window.scrollY > 50);
   const [isScrolling, setIsScrolling] = useState(false);
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -47,18 +51,23 @@ export default function MainLayout() {
           )}
         </div>
         <div className="ml-navitems">
-          {navigation.map(({ path, name, label }) => (
-            <Link
-              key={name}
-              to={path}
-              className="ml-navitem"
-              onClick={() => setMenuOpened(false)}
-            >
-              <div>{label}</div>
-            </Link>
-          ))}
+          {navigation
+            .filter(
+              ({ module, requiredPermission }) =>
+                (user?.permissions[module] ?? permissionLevel.none) >=
+                requiredPermission,
+            )
+            .map(({ path, name, label }) => (
+              <Link
+                key={name}
+                to={path}
+                className="ml-navitem"
+                onClick={() => setMenuOpened(false)}
+              >
+                <div>{label}</div>
+              </Link>
+            ))}
         </div>
-        {/* Asi pridat druhy generovany ml-navitems jenom pro mobil, protoze kdyz se resizuje okno, tak je videt, jak mobile navbar odjizdi pryc z obrazovky */}
       </nav>
       <main className="ml-main">
         <Outlet />

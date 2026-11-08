@@ -1,8 +1,16 @@
 .p-table-container {
   overflow-x: auto;
   scrollbar-width: none;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
 }
 
 .p-table-container::-webkit-scrollbar {
   display: none;
+}
+
+td.invalid {
+  color: red;
+  box-shadow: 0 0 20px red;
 }
