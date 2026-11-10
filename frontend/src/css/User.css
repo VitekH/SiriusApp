@@ -1,0 +1,24 @@
+.u-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.u-password-form button {
+  width: fit-content;
+}
+
+.u-invalid {
+  border-color: red;
+  box-shadow: 0 0 8px red;
+}
+
+.u-invalid-text {
+  color: red;
+}
+
+#u-signout {
+  margin-top: 2rem;
+  width: 200px;
+  font-size: large;
+}

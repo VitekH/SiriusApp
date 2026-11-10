@@ -1,5 +1,16 @@
-import { lazy } from "react";
+import { lazy, type LazyExoticComponent, type ComponentType } from "react";
 import { permissionLevel } from "./types.ts";
+
+
+type NavigationItem = {
+  path: string;
+  name: string;
+  label: string;
+  component: LazyExoticComponent<ComponentType>;
+  layout: string;
+  module?: string;
+  requiredPermission?: number;
+};
 
 export const navigation = [
   {
@@ -56,4 +67,11 @@ export const navigation = [
     module: "database",
     requiredPermission: permissionLevel.read,
   },
-] as const;
+    {
+    path: "/ucet",
+    name: "ucet",
+    label: "Účet",
+    component: lazy(() => import("../pages/User.tsx")),
+    layout: "main",
+  },
+] satisfies NavigationItem[];

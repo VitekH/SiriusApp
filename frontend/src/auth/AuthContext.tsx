@@ -50,7 +50,6 @@ export function AuthProvider({ children }: Props) {
 
       const data = await response.json();
       setUser(data.user);
-      console.log(data.user);
     } catch (error) {
       console.error("Authentication check failed:", error);
       setUser(null);

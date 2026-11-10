@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .env
+documentation
+siriusapp.db*
+gjk.db*
+!gjk.db

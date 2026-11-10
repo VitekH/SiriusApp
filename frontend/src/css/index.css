@@ -67,6 +67,12 @@ h1 {
 
 h2 {
   font-size: 2rem;
+  font-weight: 400;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
 }
 
 p {
@@ -98,6 +104,12 @@ button {
 button:active {
   border: 1px solid gray;
   color: gray;
+}
+
+button:disabled {
+  border: 1px solid gray;
+  color: gray;
+  cursor: default;
 }
 
 a {

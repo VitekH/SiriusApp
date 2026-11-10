@@ -54,8 +54,9 @@ export default function MainLayout() {
           {navigation
             .filter(
               ({ module, requiredPermission }) =>
+                !module ||
                 (user?.permissions[module] ?? permissionLevel.none) >=
-                requiredPermission,
+                  requiredPermission,
             )
             .map(({ path, name, label }) => (
               <Link

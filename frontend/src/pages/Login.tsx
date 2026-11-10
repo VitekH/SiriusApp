@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../auth/AuthContext.tsx";
 import "../css/Login.css";
 import { useLocation, useNavigate } from "react-router";
+import PasswordInput from "../components/PasswordInput.tsx";
 
 export default function Login() {
   const [username, setUsername] = useState<string>("");
@@ -56,11 +57,10 @@ export default function Login() {
           disabled={temporarilyDisabled}
         />
         <label htmlFor="password">Heslo:</label>
-        <input
+        <PasswordInput
           id="password"
           className={isWrong ? "lo-shake" : ""}
           name="password"
-          type="password"
           required={true}
           value={password}
           onChange={(event) => setPassword(event.target.value)}

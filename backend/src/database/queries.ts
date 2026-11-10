@@ -1,4 +1,5 @@
 import { db } from "../database/index.js";
+import type { RunResult } from "better-sqlite3";
 
 type DatabaseUser = {
   id: number;
@@ -8,34 +9,38 @@ type DatabaseUser = {
 };
 
 type User = {
-    id: number;
-    username: string;
-    member_id: number;
-    first_name: string;
-    last_name: string;
-    nickname: string | null;
-    permissions: Record<string, number>;
+  id: number;
+  username: string;
+  member_id: number;
+  first_name: string;
+  last_name: string;
+  nickname: string | null;
+  permissions: Record<string, number>;
 };
 
 type Permission = {
-    name: string;
-    value: number;
-}
+  name: string;
+  value: number;
+};
 
-type Permissions = Record<string, number>
-
-
+type Permissions = Record<string, number>;
 
 export function getUserByUsername(username: string): DatabaseUser | undefined {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT id, member_id, username, password_hash
     FROM users
     WHERE username = ?
-  `).get(username) as DatabaseUser | undefined;
+  `,
+    )
+    .get(username) as DatabaseUser | undefined;
 }
 
 export function getUserById(id: number): User | undefined {
-    return db.prepare(`
+  return db
+    .prepare(
+      `
         SELECT
             users.id,
             users.username,
@@ -46,18 +51,33 @@ export function getUserById(id: number): User | undefined {
         FROM users
         JOIN members ON users.member_id = members.id
         WHERE users.id = ?
-    `).get(id) as User | undefined;
+    `,
+    )
+    .get(id) as User | undefined;
 }
 
 export function getPermissionsById(id: number): Permissions {
-    const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
             SELECT modules.name, user_permissions.value
             FROM user_permissions
             JOIN modules ON modules.id = user_permissions.module_id
             WHERE user_permissions.user_id = ?
-    `).all(id) as Permission[];
-
-    return Object.fromEntries(
-        rows.map(({ name, value }) => [name, value])
+    `,
     )
+    .all(id) as Permission[];
+
+  return Object.fromEntries(rows.map(({ name, value }) => [name, value]));
+}
+
+export function updatePasswordById(id: number, passwordHash: string): RunResult {
+  const updatePassword = db.prepare(
+    `
+        UPDATE users
+        SET password_hash = ?
+        WHERE id = ?
+    `,
+    );
+  return updatePassword.run(passwordHash, id);;
 }

@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation} from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "./AuthContext";
 import {
   permissionLevel,
@@ -24,11 +24,13 @@ export default function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (
-    module &&
-    (user.permissions[module] ?? permissionLevel.none) < requiredPermission!
-  ) {
-    return <Navigate to="/" replace />;
+  if (module && requiredPermission !== undefined) {
+    if (
+      module &&
+      (user.permissions[module] ?? permissionLevel.none) < requiredPermission!
+    ) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <Outlet />;
