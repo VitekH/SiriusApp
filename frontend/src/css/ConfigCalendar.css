@@ -1,0 +1,27 @@
+.cc-generate-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#cc-school-year {
+  width: 4ch;
+  padding: 0 0.5rem;
+}
+
+.cc-month-header th{
+  text-align: center;
+}
+
+.cc-datepicker {
+  border: 0;
+  font: inherit;
+  width: 10ch;
+}
+.cc-select {
+  border: 0;
+}
+.cc-centered-td {
+  text-align: center;
+  vertical-align: middle;
+}

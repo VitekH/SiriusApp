@@ -4,10 +4,6 @@
   gap: 0.5rem;
 }
 
-.u-password-form button {
-  width: fit-content;
-}
-
 .u-invalid {
   border-color: red;
   box-shadow: 0 0 8px red;

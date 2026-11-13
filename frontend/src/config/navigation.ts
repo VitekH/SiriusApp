@@ -59,6 +59,15 @@ export const navigation = [
     requiredPermission: permissionLevel.read,
   },
   {
+    path: "/konfigurace",
+    name: "config",
+    label: "Konfigurace",
+    component: lazy(() => import("../pages/Config.tsx")),
+    layout: "main",
+    module: "config",
+    requiredPermission: permissionLevel.read,
+  },
+  {
     path: "/databaze",
     name: "database",
     label: "Databáze",
@@ -67,9 +76,9 @@ export const navigation = [
     module: "database",
     requiredPermission: permissionLevel.read,
   },
-    {
+  {
     path: "/ucet",
-    name: "ucet",
+    name: "user",
     label: "Účet",
     component: lazy(() => import("../pages/User.tsx")),
     layout: "main",

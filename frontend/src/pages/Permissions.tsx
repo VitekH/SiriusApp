@@ -137,7 +137,7 @@ export default function Permissions() {
       {loading && <p>Načítání...</p>}
       {!loading && permissions.length == 0 && <p>Chyba na serveru</p>}
       {!loading && permissions.length > 0 && (
-        <div className="p-table-container">
+        <div className="table-container">
           <table>
             <thead>
               <tr>

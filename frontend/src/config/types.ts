@@ -34,3 +34,9 @@ export type AuthUser = {
   member_id: number;
   permissions: Permissions;
 };
+
+export interface EventType {
+  id: number;
+  name: string;
+  label: string;
+}
