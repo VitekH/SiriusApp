@@ -25,6 +25,15 @@ type Permission = {
 
 type Permissions = Record<string, number>;
 
+export type DatabaseEvent = {
+  id: number;
+  start_date: string;
+  end_date: string;
+  type: string;
+  title: string;
+  is_canceled: number;
+}
+
 export function getUserByUsername(username: string): DatabaseUser | undefined {
   return db
     .prepare(
@@ -80,4 +89,19 @@ export function updatePasswordById(id: number, passwordHash: string): RunResult 
     `,
     );
   return updatePassword.run(passwordHash, id);;
+}
+
+export function getEventsBySchoolYear(startYear: number): DatabaseEvent[] {
+  const startDate = `${startYear}-09-01`;
+  const endDate = `${startYear + 1}-08-31`;
+
+  const events = db.prepare(`
+    SELECT *
+    FROM events
+    WHERE start_date >= ?
+      AND end_date <= ?
+    ORDER BY start_date ASC
+  `).all(startDate, endDate) as DatabaseEvent[];
+
+  return events;
 }

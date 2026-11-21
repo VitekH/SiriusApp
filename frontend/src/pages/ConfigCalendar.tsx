@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import "../css/ConfigCalendar.css";
 import { useAuth } from "../auth/AuthContext";
 import { permissionLevel, type EventType } from "../config/types";
@@ -9,10 +9,20 @@ import "react-datepicker/dist/react-datepicker.css";
 registerLocale("cs", cs);
 
 interface CalendarEventDraft {
+  id?: number;
   tempId: string;
   start_date: string;
   end_date: string;
-  type: string;
+  type_id: number;
+  title: string;
+  is_canceled: boolean;
+}
+
+interface DatabaseEvent {
+  id: number;
+  start_date: string;
+  end_date: string;
+  type_id: number;
   title: string;
   is_canceled: boolean;
 }
@@ -36,17 +46,8 @@ function fromatISOToCzech(iso: string): string {
 
 export default function ConfigCalendar() {
   const { user } = useAuth();
-  const defaultNewEventType = "trip";
   const currentYear = String(new Date().getFullYear());
   const [eventTypes, setEventTypes] = useState<EventType[]>();
-  const blankEvent: CalendarEventDraft = {
-    tempId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    start_date: "",
-    end_date: "",
-    type: "",
-    title: "",
-    is_canceled: false,
-  };
   const canEdit: boolean =
     (user?.permissions.config ?? permissionLevel.none) >= permissionLevel.write;
 
@@ -57,8 +58,15 @@ export default function ConfigCalendar() {
   const [eventDrafts, setEventDrafts] = useState<CalendarEventDraft[] | null>(
     null,
   );
-  const [newEvent, setNewEvent] = useState<CalendarEventDraft>(blankEvent);
+  const [databaseEvents, setDatabaseEvents] = useState<
+    CalendarEventDraft[] | null
+  >(null);
+  const [newEvent, setNewEvent] = useState<Partial<CalendarEventDraft> | null>(
+    null,
+  );
+  const [synced, setSynced] = useState<boolean>(false);
 
+  // Downloads eventTypes from db
   useEffect(() => {
     async function fetchEventTypes() {
       try {
@@ -72,11 +80,6 @@ export default function ConfigCalendar() {
 
         const data = await response.json();
         setEventTypes(data);
-        blankEvent.type = defaultNewEventType;
-        blankEvent.title =
-          data.find((type: EventType) => type.name === defaultNewEventType)
-            ?.label ?? "";
-        setNewEvent(blankEvent);
       } catch (error) {
         console.error("Failed to fetch event types:", error);
       }
@@ -84,9 +87,86 @@ export default function ConfigCalendar() {
     fetchEventTypes();
   }, []);
 
+  // Calls fetchEvents when eventTypes are downloaded from db
+  useEffect(() => {
+    fetchEvents(schoolYear);
+  }, [eventTypes]);
+
+  // Compares eventDrafts and databaseEvents and sets synced boolean state
+  useEffect(() => {
+    if (eventDrafts === null && databaseEvents === null) {
+      setSynced(true);
+      return;
+    }
+
+    if (eventDrafts === null || databaseEvents === null) {
+      setSynced(false);
+      return;
+    }
+
+    if (eventDrafts.length !== databaseEvents.length) {
+      setSynced(false);
+      return;
+    }
+
+    const isSynced = eventDrafts.every((draft) => {
+      if (draft.id === undefined) return false;
+
+      const databaseEvent = databaseEvents.find(
+        (event) => event.id === draft.id,
+      );
+      if (!databaseEvent) return false;
+
+      return (
+        draft.start_date === databaseEvent.start_date &&
+        draft.end_date === databaseEvent.end_date &&
+        draft.type_id === databaseEvent.type_id &&
+        draft.title === databaseEvent.title &&
+        draft.is_canceled === databaseEvent.is_canceled
+      );
+    });
+    setSynced(isSynced);
+  }, [eventDrafts, databaseEvents]);
+
+  const fetchEvents = async (schoolYear: number) => {
+    if (!eventTypes) return;
+    if (eventDrafts && eventDrafts.length > 0 && !synced) {
+      if (!confirm("Pozor, chcete přemazat neuložené změny?")) {
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(`/api/database/get-events/${schoolYear}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const events = await response.json();
+      setDatabaseEvents(events);
+      setEventDrafts(
+        events.map((event: DatabaseEvent) => ({
+          ...event,
+          tempId: String(event.id),
+        })),
+      );
+      setSynced(true);
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+    }
+  };
+
   const generateCalendar = () => {
     if (!eventTypes) {
       throw new Error("Missing event types.");
+    }
+    if (eventDrafts && eventDrafts.length > 0 && !synced) {
+      if (!confirm("Pozor, chcete přemazat neuložené změny?")) {
+        return;
+      }
     }
 
     const start = new Date(Date.UTC(schoolYear, 8, 1)); // 1.9.
@@ -124,12 +204,16 @@ export default function ConfigCalendar() {
       const eventType =
         isFirstTuesday || isLastJuneTuesday ? generalMeeting : groupMeeting;
 
+      const eventTitle = isLastJuneTuesday
+        ? "závěrečná oddílovka"
+        : eventType.label;
+
       events.push({
         tempId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         start_date: formatDateToISO(date),
         end_date: formatDateToISO(date),
-        type: eventType.name,
-        title: eventType.label,
+        type_id: eventType.id,
+        title: eventTitle,
         is_canceled: false,
       });
     }
@@ -138,22 +222,43 @@ export default function ConfigCalendar() {
   };
 
   const addEvent = () => {
-    if (
-      newEvent.start_date == "" ||
-      newEvent.type == "" ||
-      newEvent.title == ""
-    )
+    if (!newEvent?.start_date || !newEvent.type_id || !newEvent.title) {
       return;
+    }
+
     setEventDrafts((prev) =>
       [
         ...(prev ?? []),
         {
           ...newEvent,
+          tempId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           end_date: newEvent.end_date || newEvent.start_date,
-        },
+          is_canceled: false,
+        } as CalendarEventDraft,
       ].sort((a, b) => a.start_date.localeCompare(b.start_date)),
     );
-    setNewEvent(blankEvent);
+    setNewEvent(null);
+  };
+
+  const saveCalendar = async () => {
+    try {
+      const response = await fetch("/api/database/save-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ schoolYear, eventDrafts }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+      setDatabaseEvents(eventDrafts);
+      alert("Plán akcí uložen");
+    } catch (error) {
+      console.error("Failed to svae events:", error);
+    }
   };
 
   return (
@@ -177,10 +282,13 @@ export default function ConfigCalendar() {
             }}
             disabled={!canEdit}
           />
-          <span> - {schoolYear + 1}</span>
+          <span className="cc-end-year"> - {schoolYear + 1}</span>
+          <button onClick={() => fetchEvents(schoolYear)}>
+            Načíst z databáze
+          </button>
         </div>
         <button onClick={generateCalendar} disabled={!canEdit}>
-          Generovat
+          Generovat schůzky
         </button>
 
         {canEdit && (
@@ -210,11 +318,11 @@ export default function ConfigCalendar() {
                         }
                         onChange={(date: Date | null) => {
                           if (!date) return;
-                          setNewEvent((prev) =>
-                            prev
-                              ? { ...prev, start_date: formatDateToISO(date) }
-                              : prev,
-                          );
+
+                          setNewEvent((prev) => ({
+                            ...prev,
+                            start_date: formatDateToISO(date),
+                          }));
                         }}
                         selectsStart
                         minDate={new Date(`${schoolYear}-09-01`)}
@@ -247,11 +355,11 @@ export default function ConfigCalendar() {
                         }
                         onChange={(date: Date | null) => {
                           if (!date) return;
-                          setNewEvent((prev) =>
-                            prev
-                              ? { ...prev, end_date: formatDateToISO(date) }
-                              : prev,
-                          );
+
+                          setNewEvent((prev) => ({
+                            ...prev,
+                            end_date: formatDateToISO(date),
+                          }));
                         }}
                         selectsEnd
                         minDate={new Date(`${schoolYear}-09-01`)}
@@ -274,24 +382,22 @@ export default function ConfigCalendar() {
                     <td>
                       <select
                         className="cc-select"
-                        value={newEvent.type}
-                        onChange={(e) =>
-                          setNewEvent((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  type: e.target.value,
-                                  title:
-                                    eventTypes?.find(
-                                      (type) => type.name === e.target.value,
-                                    )?.label ?? e.target.value,
-                                }
-                              : prev,
-                          )
-                        }
+                        value={newEvent?.type_id ?? ""}
+                        onChange={(e) => {
+                          const typeId = Number(e.target.value);
+                          const selectedType = eventTypes?.find(
+                            (type) => type.id === typeId,
+                          );
+
+                          setNewEvent((prev) => ({
+                            ...prev,
+                            type_id: typeId,
+                            title: selectedType?.label ?? e.target.value,
+                          }));
+                        }}
                       >
                         {eventTypes?.map((type) => (
-                          <option key={type.id} value={type.name}>
+                          <option key={type.id} value={type.id}>
                             {type.label}
                           </option>
                         ))}
@@ -309,7 +415,7 @@ export default function ConfigCalendar() {
                         )
                       }
                     >
-                      {newEvent.title}
+                      {newEvent ? newEvent.title : ""}
                     </td>
                     <td className="cc-centered-td">
                       <button onClick={addEvent}>Přidat</button>
@@ -322,6 +428,14 @@ export default function ConfigCalendar() {
         )}
         <>
           <h3>Plán akcí</h3>
+          {canEdit && (
+            <div>
+              <button onClick={saveCalendar} disabled={synced}>
+                Uložit plán akcí
+              </button>
+              {!synced && <span className="cc-unsaved-label">Neuložené změny</span>}
+            </div>
+          )}
           <div className="table-container">
             <table>
               <thead>
@@ -342,7 +456,7 @@ export default function ConfigCalendar() {
                       ? eventDrafts[index - 1].start_date.slice(0, 7)
                       : null;
                   return (
-                    <>
+                    <Fragment key={event.tempId}>
                       {currentMonthYear !== previousMonthYear && (
                         <tr className="cc-month-header">
                           <th colSpan={6}>
@@ -356,7 +470,7 @@ export default function ConfigCalendar() {
                         </tr>
                       )}
 
-                      <tr key={event.tempId}>
+                      <tr>
                         <td>
                           {canEdit ? (
                             <DatePicker
@@ -430,38 +544,39 @@ export default function ConfigCalendar() {
                           {canEdit ? (
                             <select
                               className="cc-select"
-                              value={event.type}
-                              onChange={(e) =>
+                              value={event.type_id}
+                              onChange={(e) => {
+                                const selectedTypeId = Number(e.target.value);
+                                const selectedType = eventTypes?.find(
+                                  (type) => type.id === selectedTypeId,
+                                );
+
                                 setEventDrafts(
                                   (prev) =>
                                     prev?.map((item) =>
                                       item.tempId === event.tempId
                                         ? {
                                             ...item,
-                                            type: e.target.value,
+                                            type_id: selectedTypeId,
                                             title: item.is_canceled
                                               ? item.title
-                                              : (eventTypes?.find(
-                                                  (type) =>
-                                                    type.name ===
-                                                    e.target.value,
-                                                )?.label ?? event.type),
+                                              : (selectedType?.label ?? ""),
                                           }
                                         : item,
                                     ) ?? null,
-                                )
-                              }
+                                );
+                              }}
                             >
                               {eventTypes?.map((type) => (
-                                <option key={type.id} value={type.name}>
+                                <option key={type.id} value={type.id}>
                                   {type.label}
                                 </option>
                               ))}
                             </select>
                           ) : (
                             (eventTypes?.find(
-                              (type) => type.name === event.type,
-                            )?.label ?? event.type)
+                              (type) => type.id === event.type_id,
+                            )?.label ?? event.id)
                           )}
                         </td>
                         <td
@@ -486,25 +601,28 @@ export default function ConfigCalendar() {
                             disabled={!canEdit}
                             type="checkbox"
                             checked={event.is_canceled}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const isCanceled = e.target.checked;
+                              const selectedType = eventTypes?.find(
+                                (type) => type.id === event.type_id,
+                              );
+
                               setEventDrafts(
                                 (prev) =>
                                   prev?.map((item) =>
                                     item.tempId === event.tempId
                                       ? {
                                           ...item,
-                                          title: e.target.checked
+                                          title: isCanceled
                                             ? "schůzky nejsou"
-                                            : (eventTypes?.find(
-                                                (type) =>
-                                                  type.name === event.type,
-                                              )?.label ?? event.type),
-                                          is_canceled: e.target.checked,
+                                            : (selectedType?.label ??
+                                              String(event.type_id)),
+                                          is_canceled: isCanceled,
                                         }
                                       : item,
                                   ) ?? null,
-                              )
-                            }
+                              );
+                            }}
                           />
                         </td>
                         <td className="cc-centered-td">
@@ -522,7 +640,7 @@ export default function ConfigCalendar() {
                           </button>
                         </td>
                       </tr>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

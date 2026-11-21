@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db } from "../database/index.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { authorize } from "../middleware/authorize.js";
+import { getEventsBySchoolYear } from "../database/queries.js";
+import type { DatabaseEvent } from "../database/queries.js";
 
 const router = Router();
 
@@ -11,6 +13,16 @@ type Leader = {
   nickname: string | null;
   permissions: Record<string, number>;
 };
+
+interface CalendarEventDraft {
+  id?: number;
+  tempId: string;
+  start_date: string;
+  end_date: string;
+  type_id: number;
+  title: string;
+  is_canceled: boolean;
+}
 
 router.get(
   "/get-permissions",
@@ -171,6 +183,105 @@ router.get(
     } catch (error) {
       console.error("Failed to fetch event types:", error);
       res.status(500).json({ error: "Failed to fetch event types." });
+    }
+  },
+);
+
+router.get("/get-events/:startYear", (req, res) => {
+  try {
+    const startYear = Number(req.params.startYear);
+    if (!Number.isInteger(startYear) || startYear < 2020) {
+      return res.status(400).json({ error: "Invalid school year." });
+    }
+
+    const events = getEventsBySchoolYear(startYear).map(
+      (event: DatabaseEvent) => ({
+        ...event,
+        is_canceled: Boolean(event.is_canceled),
+      }),
+    );
+
+    return res.json(events);
+  } catch {
+    return res.status(500).json({ error: "Failed to fetch events." });
+  }
+});
+
+router.post(
+  "/save-events",
+  authenticate,
+  authorize("database", 2),
+  (req, res) => {
+    try {
+      const { schoolYear, eventDrafts: newEvents } = req.body;
+
+      if (!Number.isInteger(schoolYear) || !Array.isArray(newEvents)) {
+        return res.status(400).json({ error: "Invalid request data." });
+      }
+
+      const existingEvents: DatabaseEvent[] = getEventsBySchoolYear(schoolYear);
+
+      const existingById = new Map(
+        existingEvents.map((event) => [event.id, event]),
+      );
+
+      const insertEvent = db.prepare(
+        `INSERT INTO events
+        (start_date, end_date, type_id, title, is_canceled)
+         VALUES (?, ?, ?, ?, ?)`,
+      );
+
+      const updateEvent = db.prepare(
+        `UPDATE events
+        SET start_date = ?, end_date = ?, type_id = ?, title = ?, is_canceled = ?
+        WHERE id = ?`,
+      );
+
+      const deleteEvent = db.prepare(
+        `DELETE FROM events WHERE id = ?`,
+      );
+
+      const processedIds = new Set<number>();
+
+      for (const event of newEvents) {
+        if (event.id === undefined) {
+          insertEvent.run(
+            event.start_date,
+            event.end_date,
+            event.type_id,
+            event.title,
+            Number(event.is_canceled),
+          );
+          continue;
+        }
+
+        const existing = existingById.get(event.id);
+        
+        if (!existing || processedIds.has(event.id)) {
+          throw new Error(`Invalid or duplicate event ID: ${event.id}`);
+        }
+
+        processedIds.add(event.id);
+
+        updateEvent.run(
+          event.start_date,
+          event.end_date,
+          event.type_id,
+          event.title,
+          Number(event.is_canceled),
+          event.id,
+        );
+      }
+
+      for (const event of existingEvents) {
+        if (!processedIds.has(event.id)) {
+          deleteEvent.run(event.id);
+        }
+      }
+      return res.status(204).json({message: "Events saved successfully."})
+    } catch (error) {
+      console.error("Error saving events:", error);
+      return res.status(500).json({ error: "Failed to save events." });
     }
   },
 );

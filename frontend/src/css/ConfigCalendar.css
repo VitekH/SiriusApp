@@ -9,7 +9,7 @@
   padding: 0 0.5rem;
 }
 
-.cc-month-header th{
+.cc-month-header th {
   text-align: center;
 }
 
@@ -24,4 +24,12 @@
 .cc-centered-td {
   text-align: center;
   vertical-align: middle;
+}
+.cc-end-year {
+  margin-right: 1rem;
+}
+.cc-unsaved-label {
+  color: red;
+  text-shadow: 0 0 20px red;
+  margin-left: 1rem;
 }
